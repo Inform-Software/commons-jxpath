@@ -143,7 +143,13 @@ public class BasicTypeConverter implements TypeConverter {
         if (object instanceof Pointer) {
             return canConvert(((Pointer) object).getValue(), useType);
         }
-        return ConvertUtils.lookup(useType) != null;
+
+        try {
+            ClassLoaderUtil.getClass("org.apache.commons.beanutils.ConvertUtils");
+            return ConvertUtils.lookup(useType) != null;
+        } catch (ClassNotFoundException e) {
+          return false;
+        }
     }
 
     /**
@@ -269,9 +275,15 @@ public class BasicTypeConverter implements TypeConverter {
             }
         }
 
-        Converter converter = ConvertUtils.lookup(useType);
-        if (converter != null) {
-            return converter.convert(useType, object);
+        try {
+            ClassLoaderUtil.getClass("org.apache.commons.beanutils.ConvertUtils");
+
+            Converter converter = ConvertUtils.lookup(useType);
+            if (converter != null) {
+                return converter.convert(useType, object);
+            }
+        } catch (ClassNotFoundException e) {
+            // Fall through to conversation error.
         }
 
         throw new JXPathTypeConversionException("Cannot convert "
